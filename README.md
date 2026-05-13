@@ -2,7 +2,7 @@
 
 [![GitHub Portfolio](https://img.shields.io/badge/GitHub-Portfolio-181717?style=for-the-badge&logo=github)](https://github.com/navin-automation/PORTFOLIO)
 [![Email Connect](https://img.shields.io/badge/Email-Connect-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:navinmeghval@gmail.com)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=for-the-badge&logo=linkedin)](www.linkedin.com/in/navin-rathod-8565b733b)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=for-the-badge&logo=linkedin)](www.linkedin.com/in/navin-rathod-8565b733b/)
 
 Welcome! I specialize in engineering flawless digital ecosystems by eliminating manual overhead through **End-to-End Automation**. I transform complex workflows into single-click executions.
 
