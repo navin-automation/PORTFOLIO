@@ -48,7 +48,7 @@ Welcome! I specialize in engineering flawless digital ecosystems by eliminating 
 ---
 
 ## 🎓 Education & Achievements
-* **Diploma in Computer Engineering** | GTU / AICTE | **CGPA: 9.27 (GTU Topper)**
+* **Diploma in Computer Engineering** | GTU / AICTE | **CGPA: 9.27 (GTU Topper)** with a perfect 10 SPI
 * **B.Tech in Computer Science** | Dr. Subhash University | **CGPA: 8.5**
 
 ---
