@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navin Meghval | The Spatial Experience</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=Syncopate:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --card-bg: rgba(20, 20, 20, 0.4);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent: #ffffff;
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box; cursor: none;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 0%, rgba(30, 40, 60, 0.5), transparent 50%);
+        }
+
+        /* --- PREMIUM NOISE TEXTURE --- */
+        .noise-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 9999; opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* --- CUSTOM SMOOTH CURSOR --- */
+        .cursor-dot, .cursor-glow {
+            position: fixed; top: 0; left: 0; border-radius: 50%;
+            pointer-events: none; transform: translate(-50%, -50%); z-index: 10000;
+        }
+        .cursor-dot { width: 6px; height: 6px; background: #fff; transition: width 0.2s, height 0.2s; }
+        .cursor-glow { width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.2); transition: width 0.3s, height 0.3s, background 0.3s; }
+
+        /* --- TYPOGRAPHY --- */
+        .sync-text { font-family: 'Syncopate', sans-serif; text-transform: uppercase; }
+        
+        .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 0 5vw; position: relative; }
+        
+        .title-outline {
+            font-size: 8vw; line-height: 0.9; color: transparent;
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.3);
+            position: relative; transition: all 0.5s ease;
+        }
+        .title-outline:hover { color: #fff; -webkit-text-stroke: 0px; text-shadow: 0 0 40px rgba(255,255,255,0.4); }
+        .title-solid { font-size: 8vw; line-height: 0.9; color: #fff; }
+
+        .hero-desc { font-size: 1.2rem; color: var(--text-muted); max-width: 600px; margin-top: 30px; font-weight: 200; line-height: 1.8; }
+
+        /* --- LAYOUT --- */
+        .section-container { padding: 15vh 5vw; border-top: 1px solid rgba(255,255,255,0.05); }
+        .section-title { font-size: 3rem; margin-bottom: 5rem; font-weight: 200; letter-spacing: -1px; display: flex; align-items: center; gap: 20px;}
+        .section-title::after { content: ''; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,0.5), transparent); flex-grow: 1; }
+
+        /* --- DYNAMIC SPOTLIGHT CARDS --- */
+        .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; }
+
+        .spotlight-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* The Spotlight Magic */
+        .spotlight-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.06), transparent 40%);
+            z-index: 0; opacity: 0; transition: opacity 0.5s;
+            pointer-events: none;
+        }
+        .spotlight-card:hover::before { opacity: 1; }
+        .spotlight-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2); }
+
+        .card-content { position: relative; z-index: 1; }
+        
+        .card-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 10px; color: #fff; }
+        .card-meta { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; display: block;}
+        .card-text { font-size: 1rem; color: #a0a0a0; line-height: 1.6; font-weight: 200; margin-bottom: 15px;}
+        
+        .tag-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+        .tag { border: 1px solid rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 50px; font-size: 0.8rem; color: #ccc; }
+
+        /* --- STICKY TIMELINE (APPLE STYLE) --- */
+        .sticky-wrapper { display: flex; align-items: flex-start; gap: 5vw; position: relative;}
+        .sticky-left { position: sticky; top: 20vh; width: 30%; }
+        .sticky-right { width: 70%; display: flex; flex-direction: column; gap: 40px; }
+
+        .exp-row { border-left: 2px solid rgba(255,255,255,0.1); padding-left: 30px; position: relative; }
+        .exp-row::before { content: ''; position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; background: #fff; box-shadow: 0 0 15px #fff;}
+        .exp-date { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px; font-family: 'Syncopate', sans-serif;}
+
+        /* --- BIG STATS --- */
+        .stats-banner { display: flex; justify-content: space-between; padding: 10vh 5vw; background: rgba(255,255,255,0.02); border-top: 1px solid rgba(255,255,255,0.05); }
+        .stat-item h2 { font-size: 5vw; font-weight: 800; color: #fff; line-height: 1;}
+        .stat-item p { color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem;}
+
+        /* --- CONTACT LINKS --- */
+        .contact-btn {
+            display: inline-block; padding: 20px 40px; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 100px; color: #fff; text-decoration: none; font-size: 1.2rem;
+            transition: all 0.4s ease; position: relative; overflow: hidden;
+            margin-right: 20px; margin-bottom: 20px;
+        }
+        .contact-btn:hover { background: #fff; color: #000; }
+
+        /* Anim Classes */
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="noise-overlay"></div>
+    <div class="cursor-dot"></div>
+    <div class="cursor-glow"></div>
+
+    <section class="hero">
+        <div class="sync-text title-outline hover-target">NAVIN</div>
+        <div class="sync-text title-solid hover-target">MEGHVAL.</div>
+        <p class="hero-desc reveal active">
+            Automation Architect & Quality Assurance Engineer.<br>
+            Specializing in engineering flawless digital ecosystems, eliminating complex manual workflows, and delivering spatial production-level accuracy.
+        </p>
+    </section>
+
+    <section class="stats-banner reveal">
+        <div class="stat-item"><h2>80-90%</h2><p>Manual Work Reduced</p></div>
+        <div class="stat-item"><h2>3000+</h2><p>WA Bot Users</p></div>
+        <div class="stat-item"><h2>10 SPI</h2><p>GTU Topper</p></div>
+    </section>
+
+    <section class="section-container">
+        <h2 class="section-title reveal">Core Executions</h2>
+        <div class="grid-layout">
+            
+            <div class="spotlight-card hover-target reveal">
+                <div class="card-content">
+                    <span class="card-meta">Enterprise Integration</span>
+                    <h3 class="card-title">WhatsApp Business Matrix</h3>
+                    <p class="card-text">Designed a massive automation system handling communication and routing logic for 3000+ distributors (Balaji Agency). Completely eliminated the need for large manual support teams.</p>
+                    <div class="tag-wrap"><span class="tag">Python</span><span class="tag">API</span><span class="tag">System Arch</span></div>
+                </div>
+            </div>
+
+            <div class="spotlight-card hover-target reveal">
+                <div class="card-content">
+                    <span class="card-meta">High Security</span>
+                    <h3 class="card-title">Chase Bank Automation</h3>
+                    <p class="card-text">Engineered a highly secure, browser-based data extraction script using bookmark/script logic to automatically retrieve and process financial statements flawlessly.</p>
+                    <div class="tag-wrap"><span class="tag">Web Scraping</span><span class="tag">Data Security</span></div>
+                </div>
+            </div>
+
+            <div class="spotlight-card hover-target reveal">
+                <div class="card-content">
+                    <span class="card-meta">Pipeline Engineering</span>
+                    <h3 class="card-title">End-to-End CSV Pipeline</h3>
+                    <p class="card-text">Automated the complete cycle: Login → Download → Condition-based processing → Upload. Eliminated human dependency on multi-step data handling.</p>
+                    <div class="tag-wrap"><span class="tag">Validation</span><span class="tag">Workflow</span></div>
+                </div>
+            </div>
+
+            <div class="spotlight-card hover-target reveal">
+                <div class="card-content">
+                    <span class="card-meta">Finance Workflow</span>
+                    <h3 class="card-title">Bulk Invoice Posting</h3>
+                    <p class="card-text">Deployed a bulk Excel template invoice poster with real-time execution logs (Success / Failed / No Data), minimizing human errors in financial tasks.</p>
+                    <div class="tag-wrap"><span class="tag">Excel Macros</span><span class="tag">Batch Logic</span></div>
+                </div>
+            </div>
+
+            <div class="spotlight-card hover-target reveal">
+                <div class="card-content">
+                    <span class="card-meta">Communication Flow</span>
+                    <h3 class="card-title">VBA Automated Emailer</h3>
+                    <p class="card-text">Developed an Excel VBA solution to automatically generate and send emails with specific attachments, removing repetitive daily manual creation tasks.</p>
+                    <div class="tag-wrap"><span class="tag">VBA</span><span class="tag">Optimization</span></div>
+                </div>
+            </div>
+
+            <div class="spotlight-card hover-target reveal">
+                <div class="card-content">
+                    <span class="card-meta">Scraping Bot</span>
+                    <h3 class="card-title">Multi-Site Report Bot</h3>
+                    <p class="card-text">Automated login and report downloads across multiple distinct web platforms, reducing a complex daily process to a single-click execution.</p>
+                    <div class="tag-wrap"><span class="tag">Bot Architecture</span></div>
+                </div>
+            </div>
+
+            <div class="spotlight-card hover-target reveal">
+                <div class="card-content">
+                    <span class="card-meta">Live Web / DOMAIN</span>
+                    <h3 class="card-title">JS Canvas Gaming Hub</h3>
+                    <p class="card-text">Engineered interactive web games utilizing HTML Canvas, complex DSA concepts, and Firebase for real-time backend synchronization.</p>
+                    <div class="tag-wrap"><span class="tag">JavaScript</span><span class="tag">Firebase</span><span class="tag">HTML Canvas</span></div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="section-container">
+        <div class="sticky-wrapper">
+            <div class="sticky-left reveal">
+                <h2 class="section-title" style="margin-bottom: 0; font-size: 4vw; line-height: 1;">Execution<br>Timeline</h2>
+            </div>
+            <div class="sticky-right">
+                
+                <div class="exp-row reveal hover-target">
+                    <div class="exp-date">JAN 2026 – PRESENT</div>
+                    <h3 class="card-title">Quality Assurance Engineer <span style="color:#666; font-size:1rem;">(Techrover Solutions, USA Client)</span></h3>
+                    <p class="card-text" style="color: #fff;">Promoted within 2 months from Support Executive. Built automation saving 6-8 hours daily (80-90% reduction). Handled rent roll and data validation for 50-60 communities daily.</p>
+                </div>
+
+                <div class="exp-row reveal hover-target">
+                    <div class="exp-date">NOV 2025 – DEC 2025</div>
+                    <h3 class="card-title">Support Executive <span style="color:#666; font-size:1rem;">(Techrover Solutions)</span></h3>
+                    <p class="card-text">Extracted and validated massive datasets. Fast learning and execution led to rapid promotion to QA Engineer.</p>
+                </div>
+
+                <div class="exp-row reveal hover-target">
+                    <div class="exp-date">SEP 2025 – OCT 2025</div>
+                    <h3 class="card-title">Full Stack Developer Intern <span style="color:#666; font-size:1rem;">(eLeoRex Technologies, Canada Client)</span></h3>
+                    <p class="card-text">Developed highly optimized and responsive web applications directly from complex Figma designs.</p>
+                </div>
+
+                <div class="exp-row reveal hover-target">
+                    <div class="exp-date">JAN 2025 – FEB 2025</div>
+                    <h3 class="card-title">Pre-Press Content Checker <span style="color:#666; font-size:1rem;">(Sky Software)</span></h3>
+                    <p class="card-text">Ensured error-free content and high-quality outputs in the publishing process.</p>
+                </div>
+
+                <div class="exp-row reveal hover-target">
+                    <div class="exp-date">OCT 2023 – NOV 2023</div>
+                    <h3 class="card-title">Business & Startup Trainee <span style="color:#666; font-size:1rem;">(CED)</span></h3>
+                    <p class="card-text">Developed revenue models, financial planning, and startup fundamentals.</p>
+                </div>
+
+                <div class="exp-row reveal hover-target">
+                    <div class="exp-date">JUL 2023 – AUG 2023</div>
+                    <h3 class="card-title">Backend Intern <span style="color:#666; font-size:1rem;">(Smart Computer Academy)</span></h3>
+                    <p class="card-text">Built backend logic and data handling operations using PHP.</p>
+                </div>
+
+                <div class="exp-row reveal hover-target">
+                    <div class="exp-date">SEP 2022 – OCT 2022</div>
+                    <h3 class="card-title">Frontend Intern <span style="color:#666; font-size:1rem;">(Brilliant Computer Education)</span></h3>
+                    <p class="card-text">Developed responsive UI components utilizing HTML, CSS, and JS/Bootstrap.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section class="section-container">
+        <h2 class="section-title reveal">Hardware Specs</h2>
+        <div class="grid-layout">
+            <div class="spotlight-card hover-target reveal">
+                <div class="card-content">
+                    <span class="card-meta">Academics</span>
+                    <h3 class="card-title">B.Tech in Computer Science & Engineering</h3>
+                    <p class="card-text" style="color: #fff; font-size: 1.2rem;">Dr. Subhash University | CGPA: 8.5</p>
+                    <hr style="border:none; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+                    <h3 class="card-title">Diploma in Computer Engineering</h3>
+                    <p class="card-text" style="color: #fff; font-size: 1.2rem;">GTU / AICT | CGPA: 9.27</p>
+                    <p class="card-text" style="color: #00ffcc;">🏆 10 SPI (Topper of GTU)</p>
+                </div>
+            </div>
+            
+            <div class="spotlight-card hover-target reveal">
+                <div class="card-content">
+                    <span class="card-meta">Technical Stack</span>
+                    <p class="card-text"><strong>Languages:</strong> Python, JavaScript, VBA, C++, PHP, Java.</p>
+                    <p class="card-text"><strong>Core OS:</strong> Data Structures & Algorithms (DSA), OOP, DBMS, Computer Networking, Operating Systems.</p>
+                    <p class="card-text"><strong>Automation:</strong> Scripting, Workflow Optimization, Web Scraping, Data Validation, Bug Tracking.</p>
+                    <p class="card-text"><strong>Web Tech:</strong> HTML5, CSS3, Bootstrap, Firebase.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-container" style="text-align: center; padding: 20vh 5vw;">
+        <h2 class="sync-text reveal" style="font-size: 5vw; margin-bottom: 50px;">INITIATE CONNECTION</h2>
+        <div class="reveal">
+            <a href="mailto:navinmeghval@gmail.com" class="contact-btn hover-target">EMAIL: navinmeghval@gmail.com</a>
+            <a href="tel:+919429801795" class="contact-btn hover-target">VOICE: +91-9429801795</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Gujarat,+India" target="_blank" class="contact-btn hover-target">LOCATION: Gujarat, India</a>
+        </div>
+    </section>
+
+    <script>
+        // 1. DYNAMIC SPOTLIGHT HOVER EFFECT (The "Dang reh jaye" feature)
+        document.getElementById("cards");
+        const cards = document.querySelectorAll(".spotlight-card");
+        
+        cards.forEach(card => {
+            card.addEventListener("mousemove", e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty("--mouse-x", `${x}px`);
+                card.style.setProperty("--mouse-y", `${y}px`);
+            });
+        });
+
+        // 2. CUSTOM SMOOTH CURSOR
+        const dot = document.querySelector('.cursor-dot');
+        const glow = document.querySelector('.cursor-glow');
+        
+        window.addEventListener('mousemove', (e) => {
+            dot.style.left = `${e.clientX}px`;
+            dot.style.top = `${e.clientY}px`;
+            
+            // Smooth trailing effect for the glow
+            glow.animate({
+                left: `${e.clientX}px`,
+                top: `${e.clientY}px`
+            }, { duration: 300, fill: "forwards" });
+        });
+
+        // Hover effect for links and important elements
+        document.querySelectorAll('.hover-target').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                glow.style.width = '70px';
+                glow.style.height = '70px';
+                glow.style.background = 'rgba(255,255,255,0.05)';
+                dot.style.transform = 'translate(-50%, -50%) scale(0)';
+            });
+            el.addEventListener('mouseleave', () => {
+                glow.style.width = '40px';
+                glow.style.height = '40px';
+                glow.style.background = 'transparent';
+                dot.style.transform = 'translate(-50%, -50%) scale(1)';
+            });
+        });
+
+        // 3. SCROLL REVEAL OBSERVER
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+    </script>
+</body>
+</html>

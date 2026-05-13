@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NavinOS | Terminal & Desktop Environment</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #050a15;
+            font-family: 'Inter', sans-serif;
+            color: #e2e8f0;
+        }
+
+        /* ----- BOOT SCREEN ----- */
+        #boot-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000;
+            z-index: 99999;
+            padding: 20px;
+            font-family: 'Share Tech Mono', monospace;
+            color: #00ff41;
+            font-size: 1.2rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .boot-line { margin-bottom: 5px; opacity: 0; }
+
+        /* ----- DESKTOP ----- */
+        #desktop {
+            position: relative;
+            width: 100%;
+            height: calc(100% - 40px); /* Leave space for taskbar */
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 243, 255, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(188, 19, 254, 0.05), transparent 25%);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 20px;
+        }
+
+        /* ----- DESKTOP ICONS ----- */
+        .icon-box {
+            width: 90px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            padding: 10px 5px;
+            transition: background 0.2s;
+        }
+        .icon-box:hover { background: rgba(255, 255, 255, 0.1); }
+        .icon { font-size: 3rem; margin-bottom: 5px; filter: drop-shadow(0 0 5px rgba(0,243,255,0.5)); }
+        .icon-label {
+            font-size: 0.85rem;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+            font-weight: 600;
+        }
+
+        /* ----- TASKBAR ----- */
+        #taskbar {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%; height: 40px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0, 243, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 10000;
+        }
+        .start-btn {
+            background: linear-gradient(90deg, #00f3ff, #bc13fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .clock { font-family: 'Share Tech Mono', monospace; font-size: 1rem; color: #00f3ff; }
+
+        /* ----- WINDOWS (Glassmorphism + Draggable) ----- */
+        .os-window {
+            position: absolute;
+            top: 50px; left: 50px;
+            width: 700px;
+            max-width: 90vw;
+            max-height: 80vh;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            border-radius: 12px;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .window-header {
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab;
+        }
+        .window-header:active { cursor: grabbing; }
+        
+        .window-title { font-family: 'Share Tech Mono', monospace; color: #00f3ff; font-size: 1rem; }
+        
+        .window-controls { display: flex; gap: 8px; }
+        .control-btn {
+            width: 14px; height: 14px; border-radius: 50%; cursor: pointer;
+        }
+        .btn-close { background: #ff5f56; }
+        .btn-min { background: #ffbd2e; }
+        .btn-max { background: #27c93f; }
+
+        .window-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+            user-select: text;
+        }
+
+        /* Custom Scrollbar for windows */
+        .window-content::-webkit-scrollbar { width: 8px; }
+        .window-content::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        .window-content::-webkit-scrollbar-thumb { background: rgba(0, 243, 255, 0.3); border-radius: 4px; }
+        .window-content::-webkit-scrollbar-thumb:hover { background: #00f3ff; }
+
+        /* ----- CONTENT STYLING INSIDE WINDOWS ----- */
+        h2 { color: #fff; margin-bottom: 15px; font-size: 1.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
+        h3 { color: #bc13fe; margin-top: 20px; margin-bottom: 5px; font-size: 1.2rem; }
+        .meta { font-family: 'Share Tech Mono', monospace; color: #00f3ff; font-size: 0.9rem; margin-bottom: 10px; }
+        p { color: #cbd5e1; line-height: 1.6; margin-bottom: 15px; font-size: 0.95rem; }
+        ul { margin-left: 20px; color: #cbd5e1; margin-bottom: 15px; }
+        li { margin-bottom: 5px; }
+        
+        .tech-tag {
+            display: inline-block; background: rgba(0, 243, 255, 0.1); border: 1px solid #00f3ff;
+            color: #00f3ff; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; margin: 2px 5px 2px 0;
+        }
+
+        /* Terminal specific */
+        #terminal-content { font-family: 'Share Tech Mono', monospace; color: #00ff41; font-size: 1rem; }
+        .command { color: #00f3ff; }
+
+        /* Contact links */
+        a.contact-link {
+            display: block; color: #fff; text-decoration: none; padding: 15px; 
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px; border-radius: 8px; transition: all 0.3s;
+        }
+        a.contact-link:hover { background: rgba(0, 243, 255, 0.1); border-color: #00f3ff; transform: translateX(5px); }
+
+    </style>
+</head>
+<body>
+
+    <div id="boot-screen">
+        <div class="boot-line">NavinOS BIOS Version 3.0.1</div>
+        <div class="boot-line">Initializing Core Architecture... OK</div>
+        <div class="boot-line">Mounting File Systems... OK</div>
+        <div class="boot-line">Loading QA Automation Protocols... OK</div>
+        <div class="boot-line">Verifying 80-90% Manual Workload Reduction Module... VERIFIED</div>
+        <div class="boot-line">Connecting to 3000+ Nodes... ESTABLISHED</div>
+        <div class="boot-line">Decrypting User Profile: NAVIN MEGHVAL...</div>
+        <div class="boot-line" style="color: #00f3ff; font-weight: bold; margin-top: 20px;">SYSTEM READY. BOOTING UI...</div>
+    </div>
+
+    <div id="desktop">
+        
+        <div class="icon-box" onclick="openWindow('win-terminal')">
+            <div class="icon">💻</div>
+            <div class="icon-label">Terminal.exe</div>
+        </div>
+        
+        <div class="icon-box" onclick="openWindow('win-experience')">
+            <div class="icon">💼</div>
+            <div class="icon-label">Experience</div>
+        </div>
+
+        <div class="icon-box" onclick="openWindow('win-projects')">
+            <div class="icon">🚀</div>
+            <div class="icon-label">Projects</div>
+        </div>
+
+        <div class="icon-box" onclick="openWindow('win-skills')">
+            <div class="icon">⚙️</div>
+            <div class="icon-label">Skills.sys</div>
+        </div>
+
+        <div class="icon-box" onclick="openWindow('win-education')">
+            <div class="icon">🎓</div>
+            <div class="icon-label">Education</div>
+        </div>
+
+        <div class="icon-box" onclick="openWindow('win-contact')">
+            <div class="icon">📞</div>
+            <div class="icon-label">Contact</div>
+        </div>
+    </div>
+
+    <div id="taskbar">
+        <div class="start-btn">NAVIN_OS</div>
+        <div class="clock" id="os-clock">00:00:00</div>
+    </div>
+
+
+    <div class="os-window" id="win-terminal" style="top: 40px; left: 60px;">
+        <div class="window-header" onmousedown="dragWindow(event, 'win-terminal')">
+            <div class="window-title">bash - root@navin-os:~</div>
+            <div class="window-controls">
+                <div class="control-btn btn-close" onclick="closeWindow('win-terminal')"></div>
+            </div>
+        </div>
+        <div class="window-content" id="terminal-content">
+            <span class="command">root@navin-os:~$</span> cat summary.txt<br><br>
+            Navin Meghval - Quality Assurance Engineer & Full Stack Developer.<br><br>
+            Results-driven Architect with proven expertise in automation, data validation, and real-time production systems.<br>
+            > Eliminated complex manual workflows through end-to-end automation.<br>
+            > Promoted to QA within 2 months of joining based on automation contributions.<br>
+            > Reduced manual operations by 80-90% saving 6-8 hours daily.<br>
+            > Successfully handled enterprise-level data for U.S.-based clients.<br><br>
+            <span class="command">root@navin-os:~$</span> _
+        </div>
+    </div>
+
+    <div class="os-window" id="win-experience" style="top: 80px; left: 100px; width: 800px;">
+        <div class="window-header" onmousedown="dragWindow(event, 'win-experience')">
+            <div class="window-title">C:\Users\Navin\Experience.log</div>
+            <div class="window-controls">
+                <div class="control-btn btn-close" onclick="closeWindow('win-experience')"></div>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Execution Timeline</h2>
+
+            <h3>Quality Assurance Engineer (Promoted)</h3>
+            <div class="meta">Techrover Solutions Pvt Ltd (USA-based Client) | Jan 2026 – Present</div>
+            <ul>
+                <li>Promoted within 2 months from Support Executive due to outstanding performance and automation impact.</li>
+                <li>Performed QA testing including rent roll validation, data verification, and bug reporting.</li>
+                <li>Processed and validated data for 50–60 communities daily ensuring high accuracy.</li>
+                <li>Built automation solutions reducing manual workload by approximately 80–90%.</li>
+                <li>Ensured compliance and data integrity for U.S. clients.</li>
+            </ul>
+
+            <h3>Support Executive</h3>
+            <div class="meta">Techrover Solutions Pvt Ltd | Nov 2025 – Dec 2025</div>
+            <ul>
+                <li>Selected through campus placement based on technical performance.</li>
+                <li>Extracted, validated, and processed data from internal systems.</li>
+                <li>Maintained high accuracy under strict deadlines.</li>
+            </ul>
+
+            <h3>Full Stack Developer Intern</h3>
+            <div class="meta">eLeoRex Technologies (Canada-based) | Sep 2025 – Mar 2026</div>
+            <ul>
+                <li>Developed responsive web applications from Figma designs using HTML, CSS, JavaScript.</li>
+                <li>Improved UI performance and optimized code for better user experience.</li>
+            </ul>
+
+            <h3>Pre-Press Content Checker</h3>
+            <div class="meta">Sky Software | Jan 2025 – Feb 2025</div>
+            <ul>
+                <li>Ensured error-free content and high-quality outputs in publishing process.</li>
+            </ul>
+
+            <h3>Business & Startup Trainee</h3>
+            <div class="meta">The Centre for Entrepreneurship Development | Oct 2023 – Nov 2023</div>
+            <ul>
+                <li>Learned startup fundamentals, financial planning, and pitching.</li>
+                <li>Developed a business model with market and revenue analysis.</li>
+            </ul>
+
+            <h3>Backend Development Intern</h3>
+            <div class="meta">Smart Computer Academy | Jul 2023 – Aug 2023</div>
+            <ul>
+                <li>Built backend functionality using PHP and handled data operations.</li>
+            </ul>
+
+            <h3>Frontend Intern</h3>
+            <div class="meta">Brilliant Computer Education | Sep 2022 – Oct 2022</div>
+            <ul>
+                <li>Developed UI features using HTML, CSS, JavaScript.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="os-window" id="win-projects" style="top: 120px; left: 140px; width: 850px;">
+        <div class="window-header" onmousedown="dragWindow(event, 'win-projects')">
+            <div class="window-title">/mnt/projects/executions.sh</div>
+            <div class="window-controls">
+                <div class="control-btn btn-close" onclick="closeWindow('win-projects')"></div>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>High-Impact Engineering Projects</h2>
+
+            <h3>1. WhatsApp Business Automation System (Balaji Agency)</h3>
+            <p>Designed and implemented a large-scale WhatsApp automation system handling communication workflows for operations.</p>
+            <ul>
+                <li>Automated message responses, order handling, and routing logic for <strong>3000+ distributors</strong>.</li>
+                <li>Eliminated the need for large manual support teams and improved response time significantly.</li>
+            </ul>
+            <span class="tech-tag">Python</span> <span class="tech-tag">API</span> <span class="tech-tag">System Architecture</span>
+
+            <h3>2. Secure Bank Statement Automation (Chase Bank)</h3>
+            <p>Developed a highly secure automation solution to retrieve bank statements from protected banking portals.</p>
+            <ul>
+                <li>Implemented browser-based bookmark/script logic for repeated execution.</li>
+                <li>Handled sensitive workflow with 100% accuracy and reliability.</li>
+            </ul>
+            <span class="tech-tag">Web Scraping</span> <span class="tech-tag">Data Security</span>
+
+            <h3>3. End-to-End CSV Data Processing Automation</h3>
+            <p>Automated the complete pipeline workflow: <strong>Login → Download → Process → Upload</strong>.</p>
+            <ul>
+                <li>Implemented condition-based data transformation logic.</li>
+                <li>Eliminated massive dependency on manual multi-step operations.</li>
+            </ul>
+            <span class="tech-tag">Data Validation</span> <span class="tech-tag">CSV Scripts</span>
+
+            <h3>4. Bulk Invoice Posting Automation</h3>
+            <p>Automated the posting of thousands of invoices using Excel-based templates.</p>
+            <ul>
+                <li>Built system to generate real-time execution logs (Success / Failed / No Data).</li>
+                <li>Minimized human errors significantly in financial postings.</li>
+            </ul>
+            <span class="tech-tag">Excel Macros</span> <span class="tech-tag">Data Parsing</span>
+
+            <h3>5. Automated Email System using VBA</h3>
+            <p>Built Excel VBA automation to automatically generate and send emails with attachments.</p>
+            <ul>
+                <li>Eliminated daily manual email creation and improved tracking accuracy.</li>
+            </ul>
+            <span class="tech-tag">VBA</span> <span class="tech-tag">Workflow Automation</span>
+
+            <h3>6. Multi-Website Report Automation Bot</h3>
+            <p>Automated login and report downloads from multiple distinct web platforms.</p>
+            <ul>
+                <li>Replaced a complex manual process with a single-click execution workflow.</li>
+            </ul>
+            <span class="tech-tag">Bot Architecture</span>
+
+            <h3>7. JS Games Platform (Live Project)</h3>
+            <p>Developed interactive web games utilizing complex Data Structures logic.</p>
+            <ul>
+                <li>Live Link: <a href="https://jsgames-web.netlify.app/" target="_blank" style="color: #00f3ff;">https://jsgames-web.netlify.app/</a></li>
+                <li>Implemented dynamic UI using HTML5 Canvas and synchronized data via Firebase.</li>
+            </ul>
+            <span class="tech-tag">JavaScript</span> <span class="tech-tag">Firebase</span> <span class="tech-tag">Canvas</span>
+        </div>
+    </div>
+
+    <div class="os-window" id="win-skills" style="top: 160px; left: 180px;">
+        <div class="window-header" onmousedown="dragWindow(event, 'win-skills')">
+            <div class="window-title">system_specs.cfg</div>
+            <div class="window-controls">
+                <div class="control-btn btn-close" onclick="closeWindow('win-skills')"></div>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Technical Arsenal</h2>
+            
+            <h3>Languages</h3>
+            <p>Python, JavaScript, VBA (Excel Automation), C, C++, Java, PHP.</p>
+
+            <h3>Automation & QA</h3>
+            <p>Process Automation, Manual Testing, Bug Tracking, Data Validation, Web Scraping.</p>
+
+            <h3>Web Tech</h3>
+            <p>HTML5, CSS3, Bootstrap, Firebase.</p>
+
+            <h3>Core CS</h3>
+            <p>Data Structures & Algorithms (DSA), OOP, DBMS, Computer Networking, Operating Systems.</p>
+
+            <h3>Tools</h3>
+            <p>Excel Automation, CSV Processing, Workflow Optimization.</p>
+        </div>
+    </div>
+
+    <div class="os-window" id="win-education" style="top: 200px; left: 220px;">
+        <div class="window-header" onmousedown="dragWindow(event, 'win-education')">
+            <div class="window-title">Academic_Records.dat</div>
+            <div class="window-controls">
+                <div class="control-btn btn-close" onclick="closeWindow('win-education')"></div>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Academic Credentials</h2>
+
+            <h3>Bachelor of Technology (Computer Science Engineering)</h3>
+            <div class="meta">Dr. Subhash University, Junagadh | 2024 - Present</div>
+            <p style="font-size: 1.2rem; color: #fff;">✅ CGPA: <strong>8.5</strong></p>
+
+            <hr style="border:0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+
+            <h3>Diploma in Computer Engineering</h3>
+            <div class="meta">GTU / AICT, Gondal | Completed 2024</div>
+            <p style="font-size: 1.2rem; color: #fff;">✅ CGPA: <strong>9.27</strong></p>
+            <p style="color: #bc13fe; font-weight: bold;">🏆 ACHIEVED 10 SPI (Topper of GTU in 3rd Semester)</p>
+        </div>
+    </div>
+
+    <div class="os-window" id="win-contact" style="top: 240px; left: 260px; width: 400px;">
+        <div class="window-header" onmousedown="dragWindow(event, 'win-contact')">
+            <div class="window-title">establish_connection.exe</div>
+            <div class="window-controls">
+                <div class="control-btn btn-close" onclick="closeWindow('win-contact')"></div>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Comm Link</h2>
+            <p>Direct system integration available. Click below to establish connection.</p>
+            
+            <a href="mailto:navinmeghval@gmail.com" class="contact-link">
+                <strong>📧 EMAIL:</strong><br>navinmeghval@gmail.com
+            </a>
+            
+            <a href="tel:+919429801795" class="contact-link">
+                <strong>📞 PHONE / VOICE:</strong><br>+91-9429801795
+            </a>
+            
+            <a href="https://www.google.com/maps/search/?api=1&query=Gujarat,+India" target="_blank" class="contact-link">
+                <strong>📍 LOCATION:</strong><br>Gujarat, India (Open Maps)
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // 1. BOOT SEQUENCE LOGIC
+        const bootLines = document.querySelectorAll('.boot-line');
+        let delay = 0;
+        
+        bootLines.forEach((line, index) => {
+            setTimeout(() => {
+                line.style.opacity = '1';
+            }, delay);
+            delay += 400; // 400ms per line
+        });
+
+        setTimeout(() => {
+            document.getElementById('boot-screen').style.display = 'none';
+            // Auto open Terminal on boot
+            openWindow('win-terminal');
+        }, delay + 800);
+
+        // 2. CLOCK
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('os-clock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+        }, 1000);
+
+        // 3. WINDOW MANAGEMENT (Z-INDEX)
+        let highestZ = 10;
+
+        function openWindow(id) {
+            const win = document.getElementById(id);
+            win.style.display = 'flex';
+            bringToFront(win);
+        }
+
+        function closeWindow(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function bringToFront(element) {
+            highestZ++;
+            element.style.zIndex = highestZ;
+        }
+
+        // Add mousedown listener to all windows to bring them to front
+        document.querySelectorAll('.os-window').forEach(win => {
+            win.addEventListener('mousedown', () => bringToFront(win));
+        });
+
+        // 4. DRAGGABLE WINDOWS LOGIC
+        function dragWindow(e, windowId) {
+            e.preventDefault();
+            const win = document.getElementById(windowId);
+            bringToFront(win);
+            
+            let pos1 = 0, pos2 = 0, pos3 = e.clientX, pos4 = e.clientY;
+
+            function elementDrag(e2) {
+                e2.preventDefault();
+                pos1 = pos3 - e2.clientX;
+                pos2 = pos4 - e2.clientY;
+                pos3 = e2.clientX;
+                pos4 = e2.clientY;
+                win.style.top = (win.offsetTop - pos2) + "px";
+                win.style.left = (win.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }
+    </script>
+</body>
+</html>
