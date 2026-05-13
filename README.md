@@ -14,7 +14,7 @@ Welcome! I specialize in engineering flawless digital ecosystems by eliminating 
 | :--- | :--- |
 | **Efficiency Boost** | **80-90% Reduction** in manual workload (Saved 6-8 hours daily) |
 | **Scale** | Developed a WhatsApp Matrix for **3,000+ nodes/distributors** |
-| **Academic** | **GTU Topper** with a perfect **10 SPI** in 3rd Semester |
+| **Academic** | **GTU Topper** with a perfect **10 SPI**|
 
 ---
 
